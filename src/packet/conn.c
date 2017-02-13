@@ -37,7 +37,7 @@ static inline int packet_conn_read_(packet_conn_t *c, byte_buffer_t *buffer, siz
     return IO_SUCCESS;
 }
 
-int packet_conn_read_packet(packet_conn_t *c, byte_buffer_t *buffer) {
+int packet_conn_read(packet_conn_t *c, byte_buffer_t *buffer) {
     do {
         byte header_data[HEADER_SIZE];
         byte_buffer_t header_buffer;
@@ -61,5 +61,65 @@ int packet_conn_read_packet(packet_conn_t *c, byte_buffer_t *buffer) {
             break;
         }
     } while (1);
+    return IO_SUCCESS;
+}
+
+static inline int packet_conn_write_(packet_conn_t *c, byte_buffer_t *buffer, size_t want_len) {
+    if (c == NULL || buffer == NULL) {
+        return IO_ERROR;
+    }
+    if (want_len <= 0) {
+        return IO_SUCCESS;
+    }
+    ssize_t write_len = write(c->fd, buffer->data, want_len);
+    if (write_len == 0) {
+        return IO_ERROR;
+    }
+    if (write_len < want_len) {
+        return IO_ERROR;
+    }
+    return IO_SUCCESS;
+}
+
+int packet_conn_write(packet_conn_t *c, byte_buffer_t *buffer) {
+    size_t len = buffer->size - 4;
+    while (len >= MAX_PAY_LOAD_LEN) {
+        buffer->data[0] = 0xff;
+        buffer->data[1] = 0xff;
+        buffer->data[2] = 0xff;
+        buffer->data[3] = c->seq;
+
+        int ret = packet_conn_write_(c, buffer, MAX_PAY_LOAD_LEN + 4);
+        if (ret != IO_SUCCESS) {
+            return IO_ERROR;
+        }
+
+        c->seq++;
+        len -= MAX_PAY_LOAD_LEN;
+        buffer->offset += MAX_PAY_LOAD_LEN;
+    }
+
+    buffer->data[0] = (byte)len;
+    buffer->data[1] = (byte)(len >> 8);
+    buffer->data[2] = (byte)(len >> 16);
+    buffer->data[3] = c->seq;
+
+    int ret = packet_conn_write_(c, buffer, len + 4);
+    if (ret != IO_SUCCESS) {
+        return IO_ERROR;
+    }
+    c->seq++;
+    return IO_SUCCESS;
+}
+
+int packet_conn_reset(packet_conn_t *c) {
+    c->seq = 0;
+    return IO_SUCCESS;
+}
+
+
+int packet_conn_close(packet_conn_t *c) {
+    c->seq = 0;
+    close(c->fd);
     return IO_SUCCESS;
 }
