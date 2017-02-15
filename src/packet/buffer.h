@@ -1,6 +1,8 @@
 #ifndef ENIGMA_BUFFER_H
 #define ENIGMA_BUFFER_H
 
+#include <string.h>
+
 #define IO_SUCCESS 0
 #define IO_ERROR -1
 #define IO_WAIT 1
@@ -11,7 +13,6 @@ typedef unsigned char byte;
 struct byte_buffer_s {
     byte *data;
     size_t size;
-    int offset;
     size_t capacity;
 };
 
@@ -26,7 +27,7 @@ static inline byte_buffer_t *byte_buffer_new(size_t capacity) {
         return NULL;
     }
     buffer->data = malloc(capacity);
-    if (buffer->data = NULL) {
+    if (buffer->data == NULL) {
         free(buffer);
         return NULL;
     }
@@ -36,13 +37,13 @@ static inline byte_buffer_t *byte_buffer_new(size_t capacity) {
 
 static inline void byte_buffer_from(byte_buffer_t* buffer, byte *data, size_t capacity) {
     if (capacity <= 0) {
-        return NULL;
+        return;
     }
     if (buffer == NULL) {
-        return NULL;
+        return;
     }
     if (data == NULL) {
-        return NULL;
+        return;
     }
     buffer->data = data;
     buffer->capacity = capacity;
@@ -66,7 +67,7 @@ static inline int byte_buffer_extend(byte_buffer_t *buffer, size_t len, int is_p
     return 1;
 }
 
-static inline int byte_array_append(byte_buffer_t *buffer, const byte *data, size_t data_size) {
+static inline int byte_buffer_append(byte_buffer_t *buffer, const byte *data, size_t data_size) {
     if (buffer == NULL) {
         return IO_ERROR;
     }
@@ -99,7 +100,6 @@ static inline int byte_buffer_reset(byte_buffer_t *buffer) {
         return IO_ERROR;
     }
     buffer->size = 0;
-    buffer->offset = 0;
     return IO_SUCCESS;
 }
 

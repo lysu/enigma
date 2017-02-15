@@ -96,7 +96,7 @@ int packet_conn_write(packet_conn_t *c, byte_buffer_t *buffer) {
 
         c->seq++;
         len -= MAX_PAY_LOAD_LEN;
-        buffer->offset += MAX_PAY_LOAD_LEN;
+        buffer->size += MAX_PAY_LOAD_LEN;
     }
 
     buffer->data[0] = (byte)len;
