@@ -59,3 +59,36 @@ int srv_auth_write_initial_handshake(srv_conn_t *c) {
 
 }
 
+static inline uint32_t byte_array_to_uint32(byte *b) {
+    return ((uint32_t)(b[0])) | ((uint32_t)(b[1]))<<8 | ((uint32_t)(b[2]))<<16 | ((uint32_t)(b[3]))<<24;
+}
+
+
+int srv_auth_read_handshake_response(srv_conn_t *c, char *password) {
+
+    byte_buffer_t *packet_buf = byte_buffer_new(10);
+
+    int ret = packet_conn_read(c->pc, packet_buf);
+    if (ret == IO_ERROR) {
+       return ret;
+    }
+
+    int pos = 0;
+
+    //capability
+    c->capability = byte_array_to_uint32((packet_buf->data+4));
+    pos += 4;
+
+    //skip max packet size
+    pos += 4;
+
+    //charset, skip, if you want to use another charset, use set names
+    //c.collation = CollationId(data[pos])
+    pos++;
+
+    //skip reserved 23[00]
+    pos += 23;
+
+    return 0;
+
+}
